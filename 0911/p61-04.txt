@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>test3.html</title>
+<style>
+h3 { text-align: center; color: darkred; }
+span { color: blue; font-size: 20px; }
+img { display: none; }
+span:hover + img { display: block; }
+</style>
+</head>
+<body>
+<h3>Elvis Presley</h3>
+<p>He was an American singer and actor. In November 1956, he made his film debut in **Love Me Tender**. He is often referred to as "<span>the King of Rock and Roll</span>".</p>
+<hr>
+<p>아래에 마우스를 올리면 사진 출력</p>
+<span id="trigger">Love Me Tender</span>
+<img src="shrek.jpg" alt="Shrek">
+</body>
+</html>
