@@ -1,0 +1,113 @@
+1. 다음 (a)와 (b) 행이 실행된 후 EDX 레지스터의 값은 무엇입니까?
+   .data
+   one WORD 8002h
+   two WORD 4321h
+   .code
+   mov edx, 21348041h
+   movsx edx, one    ; (a)
+   movsx edx, two    ; (b)
+[(a) FFFF8002h, (b) 00004321h]
+
+2. 다음 코드가 실행된 후 EAX의 값은 무엇입니까?
+   mov eax, 1002FFFFh
+   inc ax
+[10020000h]
+
+3. 다음 코드가 실행된 후 EAX의 값은 무엇입니까?
+   mov eax, 30020000h
+   dec ax
+[3002FFFFh]
+
+4. 다음 코드가 실행된 후 EAX의 값은 무엇입니까?
+   mov eax, 1002FFFFh
+   neg ax
+[10020001h]
+
+5. 다음 코드가 실행된 후 패리티 플래그(Parity flag)의 값은 무엇입니까?
+   mov al, 1
+   add al, 3
+[0 (또는 PE=0)]
+
+6. 다음 코드가 실행된 후 EAX의 값과 부호 플래그(Sign flag)의 값은 무엇입니까?
+   mov eax, 5
+   sub eax, 6
+[EAX = FFFFFFFFh, Sign Flag = 1]
+
+7. 다음 코드에서 AL의 값은 부호 있는 바이트(signed byte)로 의도되었습니다. 최종 AL 값이 유효한 부호 있는 범위 내에 있는지 판단할 때 오버플로우 플래그(Overflow flag)가 어떻게 도움이 되는지 설명하세요.
+   mov al, -1
+   add al, 130
+[오버플로우 플래그가 1로 설정되어 결과가 유효하지 않음을 알립니다.]
+
+8. 다음 명령어가 실행된 후 RAX에는 어떤 값이 들어갑니까?
+   mov rax, 44445555h
+[0000000044445555h]
+
+9. 다음 명령어가 실행된 후 RAX에는 어떤 값이 들어갑니까?
+   .data
+   dwordVal DWORD 84326732h
+   .code
+   mov rax, 0FFFFFFFF00000000h
+   mov rax, dwordVal
+[0000000084326732h]
+
+10. 다음 명령어가 실행된 후 EAX에는 어떤 값이 들어갑니까?
+    .data
+    dVal DWORD 12345678h
+    .code
+    mov ax, 3
+    mov WORD PTR dVal+2, ax
+    mov eax, dVal
+[00035678h]
+
+11. 다음 명령어가 실행된 후 EAX에는 어떤 값이 들어갑니까?
+    .data
+    dVal DWORD ?
+    .code
+    mov dVal, 12345678h
+    mov ax, WORD PTR dVal+2
+    add ax, 3
+    mov WORD PTR dVal, ax
+    mov eax, dVal
+[12341237h]
+
+12. 양의 정수(positive integer)를 음의 정수(negative integer)에 더했을 때 오버플로우 플래그(Overflow flag)가 설정되는 것이 가능한가요? [거짓]
+
+13. 음의 정수를 음의 정수에 더해서 양의 결과(positive result)가 나왔다면 오버플로우 플래그가 설정되나요? [참]
+
+14. NEG 명령어가 오버플로우 플래그를 설정하는 것이 가능한가요? [참]
+
+15. 부호 플래그(Sign flag)와 제로 플래그(Zero flag)가 동시에 설정되는 것이 가능한가요? [거짓]
+
+16. 다음 변수 정의를 사용하여 각 명령어가 유효한지(valid) 아닌지 명시하세요.
+    .data
+    var1 SBYTE -4, -2, 3, 1
+    var2 WORD 1000h, 2000h, 3000h, 4000h
+    var3 SWORD -16, -42
+    var4 DWORD 1, 2, 3, 4, 5
+
+    a. mov ax, var1
+    b. mov ax, var2
+    c. mov eax, var3
+    d. mov var2, var3
+    e. movzx ax, var2
+    f. movzx var2, al
+[a. 무효, b. 유효, c. 무효, d. 무효, e. 무효, f. 무효]
+
+17. 다음 각 명령어가 순서대로 실행된 후 목적지 오퍼랜드의 16진수 값은 무엇입니까?
+    mov al, var1      ; a.
+    mov ah, [var1+3]  ; b.
+[a. FCh, b. 01h]
+
+18. 다음 각 명령어가 순서대로 실행된 후 목적지 오퍼랜드의 값은 무엇입니까?
+    mov ax, var2      ; a.
+    mov ax, [var2+4]  ; b.
+    mov ax, var3      ; c.
+    mov ax, [var3-2]  ; d.
+[a. 1000h, b. 3000h, c. FFF0h, d. 4000h]
+
+19. 다음 각 명령어가 순서대로 실행된 후 목적지 오퍼랜드의 값은 무엇입니까?
+    mov edx, var4     ; a.
+    movzx edx, var2   ; b.
+    mov edx, [var4+4] ; c.
+    movsx edx, var1   ; d.
+[a. 00000001h, b. 00001000h, c. 00000002h, d. FFFFFFFCh]
