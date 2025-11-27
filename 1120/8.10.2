@@ -1,0 +1,110 @@
+1. 다음은 세 개의 더블워드(doubleword)를 더하는 AddThree라는 프로시저의 호출 시퀀스입니다 (STDCALL 호출 규약을 사용한다고 가정):
+    push 10h
+    push 20h
+    push 30h
+    call AddThree
+   런타임 스택에 EBP가 푸시된 직후의 프로시저 스택 프레임(stack frame) 그림을 그리세요.
+
+스택은 높은 주소에서 낮은 주소로 자라납니다.
+(높은 주소)
+   |  ...        |
+   |  10h        | (첫 번째로 push됨)
+   |  20h        |
+   |  30h        | (마지막 인자로 push됨)
+   | 복귀 주소   | (call 명령어로 push됨)
+   |  Old EBP    | (push ebp 명령어로 push됨) <--- ESP, EBP는 여기를 가리킴
+(낮은 주소)
+
+2. 세 개의 정수 매개변수를 받아서 그 합을 계산하고 EAX 레지스터에 반환하는 AddThree라는 프로시저를 작성하세요.
+
+AddThree PROC,
+    val1:DWORD, val2:DWORD, val3:DWORD
+    
+    mov eax, val1
+    add eax, val2
+    add eax, val3
+    ret             ; STDCALL이므로 MASM이 자동으로 ret n을 생성함
+AddThree ENDP
+
+3. 더블워드 배열을 가리키는 포인터인 지역 변수 pArray를 선언하세요. [LOCAL pArray:PTR DWORD]
+
+4. 20바이트 크기의 배열인 지역 변수 buffer를 선언하세요. [LOCAL buffer[20]:BYTE]
+
+5. 16비트 부호 없는 정수를 가리키는 포인터인 지역 변수 pwArray를 선언하세요. [LOCAL pwArray:PTR WORD]
+
+6. 문제: 8비트 부호 있는 정수를 담는 지역 변수 myByte를 선언하세요. [LOCAL myByte:SBYTE]
+
+7. 문제: 20개의 더블워드 배열인 지역 변수 myArray를 선언하세요. [LOCAL myArray[20]:DWORD]
+
+8. forecolor(전경색)와 backcolor(배경색)라는 두 개의 스택 매개변수를 받고, Irvine32 라이브러리의 SetTextColor 프로시저를 호출하는 SetColor라는 프로시저를 작성하세요.
+
+SetColor PROC,
+    forecolor:DWORD,
+    backcolor:DWORD
+    
+    ; Irvine32의 SetTextColor는 EAX에 색상 속성을 요구합니다.
+    ; (배경색 * 16) + 전경색 공식을 사용합니다.
+    mov eax, backcolor
+    shl eax, 4          ; 배경색을 상위 4비트로 이동 (x16)
+    add eax, forecolor  ; 전경색 합치기
+    call SetTextColor
+    ret
+SetColor ENDP
+
+9. char, forecolor, backcolor라는 세 개의 스택 매개변수를 받는 WriteColorChar라는 프로시저를 작성하세요. 이 프로시저는 지정된 전경색과 배경색 속성을 사용하여 단일 문자를 출력합니다.
+
+  WriteColorChar PROC,
+    char:BYTE, 
+    forecolor:DWORD, 
+    backcolor:DWORD
+    
+    ; 1. 색상 설정 (위의 SetColor 로직 활용)
+    mov eax, backcolor
+    shl eax, 4
+    add eax, forecolor
+    call SetTextColor
+    
+    ; 2. 문자 출력
+    movzx eax, char     ; AL에 문자 로드 (Zero Extend)
+    call WriteChar
+    
+    ; (선택 사항: 색상을 기본값으로 복구하는 코드가 들어갈 수 있음)
+    ret
+WriteColorChar ENDP
+
+10. Irvine32 라이브러리의 DumpMem 프로시저를 캡슐화하는 DumpMemory라는 프로시저를 작성하세요. 선언된 매개변수와 USES 지시어를 사용하세요. 다음은 호출 예시입니다: INVOKE DumpMemory, OFFSET array, LENGTHOF array, TYPE array.
+
+DumpMemory PROC USES esi ecx ebx,
+    address:PTR DWORD,  ; 배열의 주소
+    units:DWORD,        ; 요소의 개수 (LENGTHOF)
+    unitType:DWORD      ; 요소의 크기 (TYPE)
+    
+    ; Irvine32의 DumpMem은 다음 레지스터를 입력으로 받습니다:
+    ; ESI = 시작 주소
+    ; ECX = 요소 개수
+    ; EBX = 요소 크기 (1, 2, 4)
+    
+    mov esi, address
+    mov ecx, units
+    mov ebx, unitType
+    call DumpMem
+    ret
+DumpMemory ENDP
+
+11. 더블워드 배열을 가리키는 두 개의 포인터와 배열 요소의 개수를 나타내는 세 번째 매개변수를 받는 MultArray라는 프로시저를 선언하세요. 또한, 이 프로시저에 대한 PROTO 선언을 작성하세요.
+
+; PROTO 선언
+MultArray PROTO,
+    ptr1:PTR DWORD,
+    ptr2:PTR DWORD,
+    count:DWORD
+
+; PROC 구현 (내용은 문제에서 요구하지 않았으므로 틀만 작성)
+MultArray PROC,
+    ptr1:PTR DWORD,
+    ptr2:PTR DWORD,
+    count:DWORD
+    
+    ; (여기에 배열 곱셈 로직 구현)
+    ret
+MultArray ENDP
