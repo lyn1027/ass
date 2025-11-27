@@ -1,0 +1,158 @@
+1. 16비트 이진 정수가 담긴 문자열을 입력받아 그 정수 값을 반환하는 함수를 작성하세요.
+[
+def binToDec(binStr):
+    value = 0
+    for digit in binStr:
+        value = value * 2 + int(digit)
+    return value
+]
+
+2. 32비트 16진수 정수가 담긴 문자열을 입력받아 그 정수 값을 반환하는 함수를 작성하세요.
+[
+def hexToDec(hexStr):
+    value = 0
+    for char in hexStr:
+        char = char.upper()
+        if '0' <= char <= '9':
+            digit = ord(char) - ord('0')
+        else:
+            digit = ord(char) - ord('A') + 10
+        value = value * 16 + digit
+    return value
+]
+
+3. 정수를 입력받아 그 수의 이진수 표현을 담은 문자열을 반환하는 함수를 작성하세요.
+[
+def decToBin(n):
+    if n == 0: return "0"
+    result = ""
+    while n > 0:
+        result = str(n % 2) + result
+        n = n // 2
+    return result
+]
+
+4. 정수를 입력받아 그 수의 16진수 표현을 담은 문자열을 반환하는 함수를 작성하세요.
+[
+def decToHex(n):
+    if n == 0: return "0"
+    hex_chars = "0123456789ABCDEF"
+    result = ""
+    while n > 0:
+        result = hex_chars[n % 16] + result
+        n = n // 16
+    return result
+]
+
+5. 기수 b (2 ≤ b ≤ 10)인 두 숫자 문자열을 더하는 함수를 작성하세요. 각 문자열은 최대 1,000자리의 숫자를 포함할 수 있습니다. 동일한 기수의 문자열로 합계를 반환하세요.
+[
+def addBaseB(num1, num2, b):
+    # 계산을 위해 문자열을 뒤집음 (일의 자리부터 계산)
+    num1, num2 = num1[::-1], num2[::-1]
+    length = max(len(num1), len(num2))
+    carry = 0
+    result = ""
+    
+    for i in range(length):
+        d1 = int(num1[i]) if i < len(num1) else 0
+        d2 = int(num2[i]) if i < len(num2) else 0
+        
+        sum_val = d1 + d2 + carry
+        carry = sum_val // b
+        result += str(sum_val % b)
+        
+    if carry:
+        result += str(carry)
+        
+    return result[::-1] # 다시 원래 순서로 뒤집어 반환
+]
+
+6. 각각 최대 1,000자리인 두 개의 16진수 문자열을 더하는 함수를 작성하세요. 합을 16진수 문자열로 반환하세요.
+[
+def addHexStr(hex1, hex2):
+    # 16진수 문자 -> 숫자 매핑 함수
+    def toVal(c):
+        if '0' <= c <= '9': return ord(c) - ord('0')
+        return ord(c.upper()) - ord('A') + 10
+    
+    # 숫자 -> 16진수 문자 매핑
+    hex_chars = "0123456789ABCDEF"
+    
+    hex1, hex2 = hex1[::-1], hex2[::-1]
+    length = max(len(hex1), len(hex2))
+    carry = 0
+    result = ""
+    
+    for i in range(length):
+        d1 = toVal(hex1[i]) if i < len(hex1) else 0
+        d2 = toVal(hex2[i]) if i < len(hex2) else 0
+        
+        sum_val = d1 + d2 + carry
+        carry = sum_val // 16
+        result += hex_chars[sum_val % 16]
+        
+    if carry:
+        result += hex_chars[carry]
+        
+    return result[::-1]
+]
+
+7. 단일 16진수 숫자(digit)와 최대 1,000자리의 16진수 문자열을 곱하는 함수를 작성하세요. 곱을 16진수 문자열로 반환하세요.
+[
+def mulHexOneDigit(hexDigit, hexStr):
+    def toVal(c):
+        if '0' <= c <= '9': return ord(c) - ord('0')
+        return ord(c.upper()) - ord('A') + 10
+    
+    hex_chars = "0123456789ABCDEF"
+    
+    multiplier = toVal(hexDigit)
+    hexStr = hexStr[::-1]
+    carry = 0
+    result = ""
+    
+    for char in hexStr:
+        digit = toVal(char)
+        prod = digit * multiplier + carry
+        carry = prod // 16
+        result += hex_chars[prod % 16]
+        
+    while carry:
+        result += hex_chars[carry % 16]
+        carry //= 16
+        
+    return result[::-1]
+]
+
+8. 아래 계산을 포함하는 Java 프로그램을 작성하고, javap -c 명령어를 사용하여 코드를 디스어셈블(disassemble)하세요. 각 줄의 목적을 추측하여 주석을 다세요.
+   int Y;
+   int X = (Y + 4) * 3;
+[
+// Java 소스 코드 (메서드 내부라고 가정)
+// int Y = ...; (Y가 지역 변수 1번, X가 2번이라고 가정)
+
+// 디스어셈블 결과 (Bytecode) 및 해석:
+iload_1         // 1. 지역 변수 Y의 값을 스택으로 로드합니다.
+iconst_4        // 2. 정수 상수 4를 스택으로 로드합니다.
+iadd            // 3. 스택의 두 값(Y와 4)을 더합니다. (결과: Y+4)
+iconst_3        // 4. 정수 상수 3을 스택으로 로드합니다.
+imul            // 5. 스택의 두 값((Y+4)와 3)을 곱합니다.
+istore_2        // 6. 계산된 결과 값을 지역 변수 X(인덱스 2)에 저장합니다.
+]
+
+9. 부호 없는 이진 정수를 뺄셈하는 방법을 고안하세요. 이진수 10001000에서 00000101을 빼서 10000011이 나오는지 테스트해보세요. 작은 값을 큰 값에서 빼는 다른 두 가지 경우도 테스트하세요.
+[
+뺄셈 방법: 각 비트 자리에서 위의 수(피감수)가 아래 수(감수)보다 작으면, 왼쪽 상위 비트에서 빌림(borrow)을 가져와 2를 더한 뒤 뺍니다.
+
+테스트 케이스: 10001000 - 00000101
+  10001000 (136)
+- 00000101 (5)
+-----------
+1. 맨 오른쪽 비트: 0 - 1 불가능.
+2. 왼쪽에서 빌려옴: ...100 -> ...011 (빌려오는 과정 연쇄)
+   3번째 비트의 1을 빌려와서 2번째 0을 10(2)으로, 다시 빌려서 1번째 0을 10(2)으로 만듦.
+   결과적으로 10001000은 1000011(10) 형태가 됨 (마지막 자리가 2가 됨)
+3. 계산:
+   (2-1)=1, (1-0)=1, (1-1)=0, (0-0)=0 ...
+   결과: 10000011 (131)
+]
