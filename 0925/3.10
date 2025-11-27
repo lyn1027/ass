@@ -1,0 +1,104 @@
+1. 정수 표현식 계산 (Integer Expression Calculation)
+[섹션 3.2의 AddTwo 프로그램을 참조하여, 레지스터를 사용하여 다음 표현식을 계산하는 프로그램을 작성하세요: A = (A + B) - (C + D). EAX, EBX, ECX, EDX 레지스터에 정수 값을 할당하여 테스트하세요.]
+
+[
+.code
+main PROC
+    ; A=10, B=20, C=30, D=5 라고 가정
+    mov eax, 10     ; EAX = A
+    mov ebx, 20     ; EBX = B
+    mov ecx, 30     ; ECX = C
+    mov edx, 5      ; EDX = D
+
+    add eax, ebx    ; EAX = A + B
+    add ecx, edx    ; ECX = C + D
+    sub eax, ecx    ; EAX = (A + B) - (C + D)
+
+    invoke ExitProcess, 0
+main ENDP
+]
+
+2. 심볼릭 정수 상수 (Symbolic Integer Constants)
+[일주일의 7일에 대한 심볼릭 상수를 정의하는 프로그램을 작성하세요. 이 심볼들을 초기값으로 사용하는 배열 변수를 생성하세요.]
+
+[
+.data
+    ; 심볼릭 상수 정의 (= 연산자 사용)
+    Mon = 0
+    Tue = 1
+    Wed = 2
+    Thu = 3
+    Fri = 4
+    Sat = 5
+    Sun = 6
+    
+    ; 배열 생성
+    weekArray BYTE Mon, Tue, Wed, Thu, Fri, Sat, Sun
+]
+
+3. 데이터 정의 (Data Definitions)
+[섹션 3.4의 표 3-2(Table 3-2)에 나열된 각 데이터 타입에 대한 정의를 포함하는 프로그램을 작성하세요. 각 변수를 해당 데이터 타입에 맞는 값으로 초기화하세요.]
+
+[
+.data
+    var1  BYTE  10h
+    var2  SBYTE -10
+    var3  WORD  1000h
+    var4  SWORD -1000
+    var5  DWORD 12345678h
+    var6  SDWORD -12345678
+    var7  FWORD 0
+    var8  QWORD 1234567812345678h
+    var9  TBYTE 80000000000000000000h
+    var10 REAL4 1.25
+    var11 REAL8 3.14159
+    var12 REAL10 1.2345
+]
+
+4. 심볼릭 텍스트 상수 (Symbolic Text Constants)
+[여러 문자열 리터럴(따옴표 사이의 문자)에 대한 심볼릭 이름을 정의하는 프로그램을 작성하세요. 변수 정의에서 각 심볼릭 이름을 사용하세요.]
+
+[
+    ; 심볼릭 텍스트 상수 정의 (EQU 사용)
+    Msg1 EQU <"Welcome to Assembly", 0>
+    Msg2 EQU <"Error encountered", 0>
+    
+.data
+    string1 BYTE Msg1
+    string2 BYTE Msg2
+]
+
+5. AddTwoSum용 리스팅 파일 (Listing File for AddTwoSum)
+[AddTwoSum 프로그램에 대한 리스팅 파일을 생성하고, 각 명령어에 대해 생성된 기계어 코드 바이트에 대한 설명을 작성하세요. 일부 바이트 값의 의미는 추측해야 할 수도 있습니다.]
+
+[
+(리스팅 파일 예시 분석)
+00000000  B8 00000005      mov eax, 5
+00000005  05 0000000A      add eax, 10
+
+설명:
+- B8 00000005: 'B8'은 MOV EAX 명령의 연산 코드(Opcode)이고, 뒤의 '00000005'는 32비트 정수 값 5(리틀 엔디안)입니다.
+- 05 0000000A: '05'는 ADD EAX 명령의 연산 코드이고, 뒤의 '0000000A'는 32비트 정수 값 10입니다.
+]
+
+6. AddVariables 프로그램 수정 (AddVariables Program)
+[AddVariables 프로그램을 64비트 변수를 사용하도록 수정하세요. 어셈블러가 발생시키는 구문 오류(syntax errors)를 설명하고, 오류를 해결하기 위해 어떤 단계를 거쳤는지 설명하세요.]
+
+[
+; 수정된 코드 (64비트 모드 기준)
+.data
+    first  QWORD 100000000h
+    second QWORD 200000000h
+    sum    QWORD 0
+.code
+main PROC
+    mov rax, first
+    add rax, second
+    mov sum, rax
+    ret
+main ENDP
+
+오류 및 해결:
+1. 오류: 32비트 모드에서 `mov eax, first`를 실행하면 "Instruction operand must be same size"(오퍼랜드 크기 불일치) 오류 발생 (QWORD는 64비트, EAX는 32비트이기 때문).
+2. 해결: 레지스터를 64비트 레지스터인 `RAX`로 변경하거나, 64비트 환경 설정을 사용해야 합니다. (32비트 환경이라면 하위 32비트와 상위 32비트를 나누어 계산해야 함).
+]
