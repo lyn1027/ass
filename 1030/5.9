@@ -1,0 +1,281 @@
+1. 텍스트 색상 그리기 (Draw Text Colors)
+[루프를 사용하여 동일한 문자열을 네 가지 다른 색상으로 출력하는 프로그램을 작성하세요. 책의 링크 라이브러리에 있는 SetTextColor 프로시저를 호출하세요.]
+
+[
+.data
+    str1 BYTE "Text in different color",0Dh,0Ah,0
+
+.code
+    mov ecx, 4          ; 4번 반복
+    mov eax, 1          ; 초기 색상 (파란색 등)
+
+L1:
+    call SetTextColor   ; 색상 설정
+    mov edx, OFFSET str1
+    call WriteString    ; 문자열 출력
+    inc eax             ; 다음 색상 코드로 증가
+    loop L1
+    
+    mov eax, white + (black * 16) ; 색상 원복 (선택사항)
+    call SetTextColor
+]
+
+2. 배열 항목 연결하기 (Linking Array Items)
+[시작 인덱스(start), 문자 배열(chars), 링크 인덱스 배열(links)이 주어졌을 때, 링크를 따라가며 문자들을 올바른 순서대로 찾아 새로운 배열에 복사하는 프로그램을 작성하세요. (결과는 A,B,C,D,E,F,G,H 순서여야 함)]
+
+[
+.data
+    start DWORD 1
+    chars BYTE 'H','A','C','E','B','D','F','G'
+    links DWORD 0,4,5,6,2,3,7,0
+    target BYTE LENGTHOF chars DUP(?)
+
+.code
+    mov esi, start              ; 시작 인덱스
+    mov edi, 0                  ; 타겟 배열 인덱스
+    mov ecx, LENGTHOF chars     ; 전체 문자 개수만큼 반복
+
+L1:
+    ; 현재 인덱스(ESI)의 문자를 가져옴
+    mov al, chars[esi]
+    
+    ; 타겟 배열에 저장
+    mov target[edi], al
+    inc edi
+
+    ; 다음 링크 인덱스를 가져옴
+    mov esi, links[esi*4]       ; links는 DWORD이므로 *4
+    
+    loop L1
+]
+
+3. 간단한 덧셈 (1) (Simple Addition 1)
+[화면을 지우고, 커서를 화면 중앙 근처로 이동시킨 뒤, 사용자에게 두 정수를 입력받아 더한 후 합계를 출력하는 프로그램을 작성하세요.]
+
+[
+.data
+    prompt1 BYTE "Enter first integer: ",0
+    prompt2 BYTE "Enter second integer: ",0
+    msgSum  BYTE "The sum is: ",0
+    val1    DWORD ?
+
+.code
+    call Clrscr         ; 화면 지우기
+    
+    mov dh, 12          ; Y 좌표 (중앙 부근)
+    mov dl, 30          ; X 좌표
+    call Gotoxy         ; 커서 이동
+
+    mov edx, OFFSET prompt1
+    call WriteString
+    call ReadInt        ; 첫 번째 수 입력
+    mov val1, eax
+
+    mov dh, 13          ; 다음 줄
+    mov dl, 30
+    call Gotoxy
+
+    mov edx, OFFSET prompt2
+    call WriteString
+    call ReadInt        ; 두 번째 수 입력
+    add eax, val1       ; 덧셈
+
+    mov dh, 14
+    mov dl, 30
+    call Gotoxy
+
+    mov edx, OFFSET msgSum
+    call WriteString
+    call WriteInt       ; 합계 출력
+]
+
+4. 간단한 덧셈 (2) (Simple Addition 2)
+[앞선 연습문제의 해결책을 시작점으로 사용하여, 이 과정을 루프를 통해 3번 반복하는 프로그램을 작성하세요. 각 반복 후에는 화면을 지워야 합니다.]
+
+[
+.code
+    mov ecx, 3          ; 3회 반복 루프
+
+L_Main:
+    push ecx            ; 외부 루프 카운터 저장 (안전장치)
+    
+    call Clrscr         ; 화면 지우기
+    ; ... (3번 문제의 코드 내용과 동일하게 좌표 이동 및 입출력 수행) ...
+    call WaitMsg        ; 사용자가 결과를 볼 수 있게 잠시 대기
+    
+    pop ecx             ; 카운터 복원
+    loop L_Main
+]
+
+5. 더 나은 랜덤 범위 프로시저 (BetterRandomRange Procedure)
+[M과 N-1 사이의 정수를 생성하는 BetterRandomRange 프로시저를 작성하세요. 호출자는 M을 EBX에, N을 EAX에 전달합니다. (기존 RandomRange는 0 ~ N-1만 생성함)]
+
+[
+BetterRandomRange PROC
+    ; 입력: EAX = N (상한), EBX = M (하한)
+    ; 출력: EAX = M ~ N-1 사이의 난수
+    
+    sub eax, ebx        ; 범위 계산 (N - M)
+    call RandomRange    ; 0 ~ (N-M)-1 생성
+    add eax, ebx        ; 하한값 M 더하기 (M ~ N-1)
+    ret
+BetterRandomRange ENDP
+
+; 테스트 코드
+; mov ebx, -300
+; mov eax, 100
+; call BetterRandomRange
+]
+
+6. 랜덤 문자열 (Random Strings)
+[길이가 L인 랜덤 대문자 문자열을 생성하는 프로시저를 작성하세요. L값은 EAX로, 문자열 배열의 포인터는 ESI 등으로 전달받습니다. 20번 테스트하는 프로그램을 작성하세요.]
+
+[
+CreateRandomString PROC USES ecx esi eax
+    ; 입력: EAX = 길이 L, ESI = 배열 포인터
+    mov ecx, eax        ; 루프 카운터 설정
+L1:
+    mov eax, 26         ; 알파벳 개수
+    call RandomRange    ; 0 ~ 25 생성
+    add al, 'A'         ; 'A'를 더해 대문자 ASCII로 변환
+    mov [esi], al       ; 배열에 저장
+    inc esi
+    loop L1
+    mov BYTE PTR [esi], 0 ; Null 종료 (필요 시)
+    ret
+CreateRandomString ENDP
+]
+
+7. 랜덤 화면 위치 (Random Screen Locations)
+[100ms의 시간 지연을 두고 100개의 랜덤한 화면 위치에 단일 문자를 출력하는 프로그램을 작성하세요. GetMaxXY 프로시저를 사용하여 콘솔 크기를 파악하세요.]
+
+[
+.code
+    call GetMaxXY       ; DH=최대행, DL=최대열 반환
+    mov ecx, 100        ; 100번 반복
+
+L1:
+    movzx eax, dl       ; 최대 열(X) 범위
+    call RandomRange
+    mov bl, al          ; X 좌표 임시 저장
+    
+    movzx eax, dh       ; 최대 행(Y) 범위
+    call RandomRange
+    mov dh, al          ; Y 좌표 설정
+    mov dl, bl          ; X 좌표 설정
+    call Gotoxy         ; 커서 이동
+
+    mov al, 'A'         ; 출력할 문자
+    call WriteChar
+
+    mov eax, 100        ; 100ms 지연
+    call Delay
+    loop L1
+]
+
+8. 색상 행렬 (Color Matrix)
+[전경색과 배경색의 모든 가능한 조합(16x16=256)으로 단일 문자를 출력하는 프로그램을 작성하세요. 0부터 15까지 번호가 매겨진 색상을 사용하여 중첩 루프를 활용하세요.]
+
+[
+.code
+    mov ecx, 256        ; 총 256개 조합
+    mov eax, 0          ; 색상 코드 0부터 시작
+
+L1:
+    call SetTextColor   ; AL에 있는 값으로 색상 설정
+    push eax            ; 색상 코드 보존
+    mov al, 'X'         ; 출력할 문자
+    call WriteChar
+    pop eax             ; 색상 코드 복원
+    
+    inc eax             ; 다음 색상
+    loop L1
+    
+    ; 화면 복구
+    mov eax, white + (black * 16)
+    call SetTextColor
+]
+
+9. 재귀 프로시저 (Recursive Procedure)
+[프로시저가 자기 자신을 호출하는 재귀 프로그램을 작성하세요. 스택 오버플로우를 막기 위해 ECX에 반복 횟수를 넣고 LOOP 명령어만을 사용하여 정해진 횟수만큼만 재귀 호출하도록 만드세요.]
+
+[
+RecursiveProc PROC
+    inc counter         ; 실행 횟수 확인용 변수 증가
+    loop RecursiveProc  ; ECX를 감소시키고 0이 아니면 재귀 호출
+    ret
+RecursiveProc ENDP
+
+; 메인에서의 호출
+; mov ecx, 5
+; call RecursiveProc
+]
+
+10. 피보나치 생성기 (Fibonacci Generator)
+[피보나치 수열의 N개 값을 생성하여 더블워드 배열에 저장하는 프로시저를 작성하세요. N=47일 때 테스트하세요. (첫 값 1, 마지막 값 2,971,215,073)]
+
+[
+GenerateFibonacci PROC USES ecx esi ebx eax
+    ; ESI = 배열 포인터, ECX = N (생성할 개수)
+    
+    mov DWORD PTR [esi], 1      ; Fib(1) = 1
+    mov DWORD PTR [esi+4], 1    ; Fib(2) = 1
+    
+    sub ecx, 2                  ; 앞의 2개는 이미 채웠으므로 카운트 감소
+    add esi, 8                  ; 인덱스 이동 (3번째 요소 위치로)
+
+L1:
+    mov eax, [esi-4]            ; Fib(i-1)
+    add eax, [esi-8]            ; Fib(i-2)
+    mov [esi], eax              ; Fib(i) 저장
+    add esi, 4                  ; 다음 위치로
+    loop L1
+    ret
+GenerateFibonacci ENDP
+]
+
+11. K의 배수 찾기 (Finding Multiples of K)
+[크기 N의 바이트 배열에서 K의 모든 배수를 찾아 해당 요소를 1로 설정하는 프로시저를 작성하세요. (에라토스테네스의 체와 유사). N=50, K=2와 K=3으로 테스트하세요.]
+
+[
+MarkMultiples PROC USES eax esi ecx
+    ; 입력: ESI = 배열 포인터, EAX = K, ECX = N (배열 크기)
+    
+    mov edx, 1          ; 현재 인덱스 (1부터 시작한다고 가정)
+    ; 또는 0부터 시작이면 로직에 맞게 조정 필요. 배수 문제이므로 1부터 카운트가 일반적.
+    
+L_Scan:
+    push eax            ; K 값 보존
+    push edx            ; 현재 인덱스 보존
+    
+    ; 배수 확인 (현재인덱스 % K == 0 ?)
+    mov eax, edx
+    mov bl, al          ; 나눗셈을 위해 이동... (하지만 div 등 조건문을 아직 안 배웠다는 가정 하에)
+    
+    ; 조건문을 쓰지 못하는 5장 단계라면, 인덱싱으로 처리해야 함.
+    ; 아래는 인덱스 주소 지정을 활용한 방식
+    
+    ; (조건문 없이 구현하는 수정된 로직)
+    ; ESI는 배열 시작. K만큼 점프하며 1로 설정.
+    ; 레지스터 초기화: EDI(인덱스) = K-1 (0-based index)
+    
+    pop edx
+    pop eax
+    ; ... (조건문 챕터 전이라면 루프를 돌며 인덱스를 K씩 증가시키는 방식이 적절)
+    
+    ; [수정된 간단한 구현]
+    mov edi, eax        ; K 값을 EDI에 복사
+    dec edi             ; 0-based index 보정 (예: K=2면 인덱스 1, 3, 5...)
+    
+L_Loop:
+    cmp edi, ecx        ; 배열 크기 초과 확인 (CMP는 6장 내용이지만 보통 루프 제어에 필요)
+    jae L_End           ; 크면 종료
+    
+    mov BYTE PTR [esi + edi], 1 ; 해당 위치 1로 설정
+    add edi, eax        ; 인덱스에 K 더하기
+    jmp L_Loop
+    
+L_End:
+    ret
+MarkMultiples ENDP
+]
