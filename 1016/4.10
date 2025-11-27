@@ -1,0 +1,154 @@
+1. 빅 엔디안에서 리틀 엔디안으로 변환 (Converting from Big Endian to Little Endian)
+[MOV 명령어를 사용하여 bigEndian이라는 바이트 배열(12h, 34h, 56h, 78h)의 값을 littleEndian이라는 DWORD 변수로 복사하되, 바이트의 순서를 역순으로 재배치하여 리틀 엔디안 방식(12345678h)처럼 저장하는 코드를 작성하세요.]
+
+[
+.data
+    bigEndian BYTE 12h, 34h, 56h, 78h
+    littleEndian DWORD ?
+.code
+    mov al, bigEndian+3      ; 78h
+    mov BYTE PTR littleEndian, al
+    mov al, bigEndian+2      ; 56h
+    mov BYTE PTR littleEndian+1, al
+    mov al, bigEndian+1      ; 34h
+    mov BYTE PTR littleEndian+2, al
+    mov al, bigEndian        ; 12h
+    mov BYTE PTR littleEndian+3, al
+]
+
+2. 배열 값의 쌍 교환 (Exchanging Pairs of Array Values)
+[루프와 인덱스 주소 지정(indexed addressing)을 사용하여 짝수 개의 요소를 가진 배열에서 인접한 쌍의 값을 서로 교환하는 프로그램을 작성하세요. (예: i번째 항목은 i+1번째와, i+2번째는 i+3번째와 교환)]
+
+[
+.data
+    array DWORD 1, 2, 3, 4, 5, 6
+.code
+    mov ecx, LENGTHOF array / 2
+    mov esi, 0
+L1:
+    mov eax, array[esi]
+    xchg eax, array[esi+4]
+    mov array[esi], eax
+    add esi, 8
+    loop L1
+]
+
+3. 배열 값 사이의 간격 합계 (Summing the Gaps between Array Values)
+[루프와 인덱스 주소 지정을 사용하여 오름차순으로 정렬된 dword 배열에서 연속된 요소들 간의 차이(간격)를 계산하고, 그 간격들의 총합을 구하는 프로그램을 작성하세요.]
+
+[
+.data
+    array DWORD 0, 2, 5, 9, 10
+    sum DWORD 0
+.code
+    mov ecx, LENGTHOF array - 1
+    mov esi, 0
+    mov eax, 0
+L1:
+    mov ebx, array[esi+4]    ; 다음 값
+    sub ebx, array[esi]      ; 현재 값을 뺌
+    add eax, ebx             ; 간격을 합계에 더함
+    add esi, 4
+    loop L1
+    mov sum, eax
+]
+
+4. Word 배열을 DoubleWord 배열로 복사 (Copying a Word Array to a DoubleWord Array)
+[루프를 사용하여 부호 없는 16비트(Word) 배열의 모든 요소를 부호 없는 32비트(Doubleword) 배열로 복사하는 프로그램을 작성하세요.]
+
+[
+.data
+    wordArray WORD 10, 20, 30
+    dwordArray DWORD LENGTHOF wordArray DUP(?)
+.code
+    mov ecx, LENGTHOF wordArray
+    mov esi, 0
+    mov edi, 0
+L1:
+    movzx eax, wordArray[esi]  ; 0으로 확장하여 이동
+    mov dwordArray[edi], eax
+    add esi, TYPE wordArray
+    add edi, TYPE dwordArray
+    loop L1
+]
+
+5. 피보나치 수열 (Fibonacci Numbers)
+[루프를 사용하여 피보나치 수열의 처음 7개 값을 계산하는 프로그램을 작성하세요. 공식: Fib(1)=1, Fib(2)=1, Fib(n) = Fib(n-1) + Fib(n-2)]
+
+[
+.data
+    fib DWORD 7 DUP(?)
+.code
+    mov fib[0], 1
+    mov fib[4], 1
+    mov ecx, 5              ; 앞의 2개 제외하고 5번 반복
+    mov esi, 8              ; 인덱스 2부터 시작
+L1:
+    mov eax, fib[esi-4]     ; Fib(n-1)
+    add eax, fib[esi-8]     ; Fib(n-2)
+    mov fib[esi], eax
+    add esi, 4
+    loop L1
+]
+
+6. 배열 뒤집기 (Reverse an Array)
+[간접 또는 인덱스 주소 지정을 사용하여 정수 배열의 요소 순서를 제자리(in-place)에서 역순으로 바꾸세요. SIZEOF, TYPE, LENGTHOF 연산자를 사용하여 유연하게 작성하세요.]
+
+[
+.data
+    array DWORD 1, 2, 3, 4, 5
+.code
+    mov esi, 0
+    mov edi, SIZEOF array - TYPE array
+    mov ecx, LENGTHOF array / 2
+L1:
+    mov eax, array[esi]
+    xchg eax, array[edi]
+    mov array[esi], eax
+    add esi, TYPE array
+    sub edi, TYPE array
+    loop L1
+]
+
+7. 문자열 역순 복사 (Copy a String in Reverse Order)
+[루프와 간접 주소 지정을 사용하여 source 문자열을 target으로 복사하되, 문자의 순서를 뒤집어서 저장하는 프로그램을 작성하세요.]
+
+[
+.data
+    source BYTE "This is the source string", 0
+    target BYTE SIZEOF source DUP('#')
+.code
+    mov ecx, LENGTHOF source - 1  ; null 문자 제외
+    mov esi, 0
+    mov edi, LENGTHOF source - 2  ; 마지막 문자 위치
+L1:
+    mov al, source[esi]
+    mov target[edi], al
+    inc esi
+    dec edi
+    loop L1
+    mov target[LENGTHOF source - 1], 0 ; null 문자 추가
+]
+
+8. 배열 요소 이동시키기 (Shifting the Elements in an Array)
+[루프와 인덱스 주소 지정을 사용하여 32비트 정수 배열의 멤버들을 한 칸씩 앞으로 회전(rotate) 시키는 코드를 작성하세요. 마지막 값은 첫 번째 위치로 이동해야 합니다. (예: [10, 20, 30, 40] -> [40, 10, 20, 30])]
+
+[
+.data
+    array DWORD 10, 20, 30, 40
+.code
+    ; 마지막 요소를 임시 저장
+    mov esi, SIZEOF array - TYPE array
+    mov eax, array[esi]     ; eax = 40
+    
+    ; 뒤에서부터 앞으로 요소 이동
+    mov ecx, LENGTHOF array - 1
+L1:
+    mov ebx, array[esi-4]   ; 앞의 값 읽기
+    mov array[esi], ebx     ; 현재 위치에 저장
+    sub esi, 4
+    loop L1
+    
+    ; 임시 저장한 값을 첫 번째 요소에 저장
+    mov array[0], eax
+]
