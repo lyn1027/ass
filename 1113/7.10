@@ -1,0 +1,167 @@
+1. ASCII 10진수 출력 (Display ASCII Decimal) 암시적인 소수점(implied decimal point)을 가진 10진수 ASCII 숫자를 출력하는 WriteScaled 프로시저를 작성하세요. DECIMAL_OFFSET은 숫자의 오른쪽 끝에서부터 소수점이 삽입될 위치를 나타냅니다. (입력: EDX=문자열 오프셋, ECX=전체 길이, EBX=소수점 오프셋)
+
+WriteScaled PROC USES edx ecx ebx esi eax
+    mov esi, edx           ; 문자열 시작 주소
+    mov edx, ecx           ; 전체 길이 저장
+    sub edx, ebx           ; 소수점이 찍힐 인덱스 계산 (왼쪽 기준: 전체길이 - 오프셋)
+    
+    mov eax, 0             ; 현재 인덱스 카운터
+L_Loop:
+    cmp eax, edx           ; 소수점 위치에 도달했는지 확인
+    jne L_SkipDot
+    
+    push eax
+    mov al, '.'            ; 소수점 출력
+    call WriteChar
+    pop eax
+
+L_SkipDot:
+    mov al, [esi]          ; 숫자 문자 읽기
+    call WriteChar         ; 출력
+    inc esi                ; 다음 문자로 이동
+    inc eax                ; 인덱스 증가
+    loop L_Loop            ; ECX(전체 길이)만큼 반복
+    ret
+WriteScaled ENDP
+
+2. 확장 뺄셈 프로시저 (Extended Subtraction Procedure) 임의의 크기를 가진 두 이진 정수를 뺄셈하는 Extended_Sub 프로시저를 작성하세요. (입력: ESI=피감수 포인터, EDI=감수 포인터, ECX=더블워드 개수)
+
+Extended_Sub PROC USES esi edi ecx eax
+    clc                 ; 캐리 플래그 초기화 (뺄셈 시작 전)
+
+L1:
+    mov eax, [esi]      ; 피감수 로드
+    sbb eax, [edi]      ; 감수와 빌림(Borrow)을 뺌 (EAX - [EDI] - CF)
+    mov [esi], eax      ; 결과 저장
+    
+    add esi, 4          ; 다음 더블워드 위치로 이동
+    add edi, 4
+    loop L1
+
+    ret
+Extended_Sub ENDP
+
+3. 팩 10진수 변환 (Packed Decimal Conversion) 4바이트 팩 10진수 정수를 ASCII 10진수 문자열로 변환하는 PackedToAsc 프로시저를 작성하세요. (입력: EAX=팩 10진수 값, EDI=결과 버퍼 포인터)
+
+PackedToAsc PROC USES eax edi ecx edx
+    mov ecx, 4          ; 4바이트 처리
+    add edi, 7          ; 버퍼의 끝(LSB 위치)부터 채우기 위해 포인터 이동
+
+L1:
+    ; --- 하위 니블(4비트) 처리 ---
+    mov edx, eax
+    and edx, 0Fh        ; 하위 4비트 마스킹
+    or  dl, 30h         ; ASCII로 변환 ('0'=30h)
+    mov [edi], dl       ; 버퍼에 저장
+    dec edi             ; 버퍼 포인터 앞으로 이동
+    
+    shr eax, 4          ; 다음 니블을 위해 시프트
+
+    ; --- 상위 니블(4비트) 처리 ---
+    mov edx, eax
+    and edx, 0Fh
+    or  dl, 30h
+    mov [edi], dl
+    dec edi
+    
+    shr eax, 4          ; 다음 바이트를 위해 시프트
+    loop L1
+    
+    ret
+PackedToAsc ENDP
+
+4. 회전 연산을 이용한 암호화 (Encryption Using Rotate Operations) 키 배열의 값에 따라 평문 바이트를 회전시켜 암호화하는 프로시저를 작성하세요. (양수는 우회전, 음수는 좌회전. 키 배열: -2, 4, 1, 0, -3, 5, 2, -4, -4, 6)
+
+Encryption PROC USES esi edi ecx eax ebx edx
+    ; 입력: ESI=메시지, ECX=길이, EDI=키 배열
+    mov ebx, 0          ; 키 인덱스 (0~9)
+
+L1:
+    mov al, [esi]       ; 메시지 문자 로드
+    mov dl, [edi+ebx]   ; 키 값 로드
+    
+    cmp dl, 0
+    je  SaveChar        ; 0이면 회전 없음
+    jg  RotateRight     ; 양수면 우회전
+    
+    ; -- 좌회전 (음수일 때) --
+    neg dl              ; 양수로 변환 (회전 횟수)
+    push ecx            ; 루프 카운터 보호
+    mov cl, dl
+    rol al, cl          ; 왼쪽 회전
+    pop ecx
+    jmp SaveChar
+
+RotateRight:
+    ; -- 우회전 (양수일 때) --
+    push ecx
+    mov cl, dl
+    ror al, cl          ; 오른쪽 회전
+    pop ecx
+
+SaveChar:
+    mov [esi], al       ; 암호화된 문자 저장
+    inc esi             ; 다음 문자로
+    inc ebx             ; 키 인덱스 증가
+    cmp ebx, 10         ; 키 배열 길이(10) 체크
+    jl  NextIter
+    mov ebx, 0          ; 키 인덱스 초기화 (반복)
+
+NextIter:
+    loop L1
+    ret
+Encryption ENDP
+
+5. 소수 (Prime Numbers) / 에라토스테네스의 체(Sieve of Eratosthenes) 방법을 사용하여 2와 1000 사이의 모든 소수를 찾아 출력하는 프로그램을 작성하세요.
+
+.data
+    IsPrime BYTE 1001 DUP(1) ; 1로 초기화 (모두 소수로 가정)
+
+.code
+SieveOfEratosthenes PROC
+    ; 0과 1은 소수가 아님
+    mov IsPrime[0], 0
+    mov IsPrime[1], 0
+    
+    mov ecx, 2          ; 숫자 2부터 시작
+L_Process:
+    cmp ecx, 1000
+    ja  L_PrintAll      ; 1000을 넘으면 처리 끝, 출력으로 이동
+
+    cmp IsPrime[ecx], 0 ; 이미 지워진(소수가 아닌) 수인지 확인
+    je  L_NextNum
+
+    ; -- 배수 지우기 로직 --
+    mov eax, ecx
+    add eax, ecx        ; 2*i 부터 시작 (자기 자신은 제외)
+L_MarkMultiples:
+    cmp eax, 1000
+    ja  L_NextNum
+    mov IsPrime[eax], 0 ; 소수 아님(0)으로 표시
+    add eax, ecx        ; 다음 배수 (3*i, 4*i ...)
+    jmp L_MarkMultiples
+
+L_NextNum:
+    inc ecx
+    jmp L_Process
+
+L_PrintAll:
+    ; -- 결과 출력 --
+    mov ecx, 2
+PrintLoop:
+    cmp ecx, 1000
+    ja  PrintEnd
+    
+    cmp IsPrime[ecx], 1 ; 소수인지 확인
+    jne SkipPrint
+    
+    mov eax, ecx
+    call WriteDec       ; 소수 출력
+    call Crlf           ; 줄바꿈
+SkipPrint:
+    inc ecx
+    jmp PrintLoop
+
+PrintEnd:
+    ret
+SieveOfEratosthenes ENDP
