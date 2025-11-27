@@ -1,0 +1,116 @@
+1. 다음 명령어가 실행된 후 BX의 값은 무엇입니까?
+   mov bx, 0FFFFh
+   and bx, 6Bh
+[006Bh]
+
+2. 다음 명령어가 실행된 후 BX의 값은 무엇입니까?
+   mov bx, 91BAh
+   and bx, 92h
+[0092h]
+
+3. 다음 명령어가 실행된 후 BX의 값은 무엇입니까?
+   mov bx, 0649Bh
+   or bx, 3Ah
+[64BBh]
+
+4. 다음 명령어가 실행된 후 BX의 값은 무엇입니까?
+   mov bx, 029D6h
+   xor bx, 8181h
+[A857h]
+
+5. 다음 명령어가 실행된 후 EBX의 값은 무엇입니까?
+   mov ebx, 0AFAF649Bh
+   or ebx, 3A219604h
+[BAFAF69Fh]
+
+6. 다음 명령어가 실행된 후 RBX의 값은 무엇입니까?
+   mov rbx, 0AFAF649Bh
+   xor rbx, 0FFFFFFFFh
+[00000000F5050964h]
+
+7. 다음 명령어 시퀀스에서, 지시된 위치의 AL 결과 값을 2진수(binary)로 나타내세요.
+   mov al, 01101111b
+   and al, 00101101b    ; a.
+   mov al, 6Dh
+   and al, 4Ah          ; b.
+   mov al, 00001111b
+   or  al, 61h          ; c.
+   mov al, 94h
+   xor al, 37h          ; d.
+[a. 00101101b, b. 01001000b, c. 01101111b, d. 10100011b]
+
+8. 다음 명령어 시퀀스에서, 지시된 위치의 AL 결과 값을 16진수(hexadecimal)로 나타내세요.
+   mov al, 7Ah
+   not al               ; a.
+   mov al, 3Dh
+   and al, 74h          ; b.
+   mov al, 9Bh
+   or  al, 35h          ; c.
+   mov al, 72h
+   xor al, 0DCh         ; d.
+[a. 85h, b. 34h, c. BFh, d. AEh]
+
+9. 다음 명령어 시퀀스에서, 지시된 위치의 Carry, Zero, Sign 플래그 값을 나타내세요.
+   mov al, 00001111b
+   test al, 00000010b   ; a. CF=  ZF=  SF=
+   mov al, 00000110b
+   cmp al, 00000101b    ; b. CF=  ZF=  SF=
+   mov al, 00000101b
+   cmp al, 00000111b    ; c. CF=  ZF=  SF=
+[a. CF=0 ZF=0 SF=0, b. CF=0 ZF=0 SF=0, c. CF=1 ZF=0 SF=1]
+
+10. 어떤 조건부 점프 명령어가 ECX 레지스터의 내용을 기반으로 분기를 실행합니까? [JECXZ]
+
+11. JA(Jump if Above)와 JNBE(Jump if Not Below or Equal)는 Zero 플래그와 Carry 플래그에 의해 어떻게 영향을 받습니까? [CF=0 그리고 ZF=0 일 때 점프합니다.]
+
+12. 다음 코드가 실행된 후 EDX의 최종 값은 무엇입니까?
+    mov edx, 1
+    mov eax, 7FFFh
+    cmp eax, 8000h
+    jl  L1
+    mov edx, 0
+    L1:
+[1]
+
+13. 다음 코드가 실행된 후 EDX의 최종 값은 무엇입니까?
+    mov edx, 1
+    mov eax, 7FFFh
+    cmp eax, 8000h
+    jb  L1
+    mov edx, 0
+    L1:
+[1]
+
+14. 다음 코드가 실행된 후 EDX의 최종 값은 무엇입니까?
+    mov edx, 1
+    mov eax, 7FFFh
+    cmp eax, 0FFFF8000h
+    jl  L2
+    mov edx, 0
+    L2:
+[0]
+
+15. 다음 코드는 Target이라는 레이블로 점프할 것입니다. [참]
+    mov eax, -30
+    cmp eax, -50
+    jg  Target
+
+16. 다음 코드는 Target이라는 레이블로 점프할 것입니다. [참]
+    mov eax, -42
+    cmp eax, 26
+    ja  Target
+
+17. 다음 명령어가 실행된 후 RBX의 값은 무엇입니까?
+    mov rbx, 0FFFFFFFFFFFFFFFFh
+    and rbx, 80h
+[0000000000000080h]
+
+18. 다음 명령어가 실행된 후 RBX의 값은 무엇입니까?
+    mov rbx, 0FFFFFFFFFFFFFFFFh
+    and rbx, 808080h
+[0000000000808080h]
+
+19. 다음 명령어가 실행된 후 RBX의 값은 무엇입니까?
+    mov rbx, 0FFFFFFFFFFFFFFFFh
+    and rbx, 80808080h
+[0000000080808080h]
