@@ -1,0 +1,98 @@
+1. 다음 코드 시퀀스에서 각 시프트(shift) 또는 회전(rotate) 명령어가 실행된 후의 AL 값을 적으세요.
+   mov al, 0D4h
+   shr al, 1      ; a.
+   mov al, 0D4h
+   sar al, 1      ; b.
+   mov al, 0D4h
+   sar al, 4      ; c.
+   mov al, 0D4h
+   rol al, 1      ; d.
+[a. 6Ah, b. EAh, c. FDh, d. A9h]
+
+2. 다음 코드 시퀀스에서 각 시프트 또는 회전 명령어가 실행된 후의 AL 값을 적으세요.
+   mov al, 0D4h
+   ror al, 3      ; a.
+   mov al, 0D4h
+   rol al, 7      ; b.
+   stc
+   mov al, 0D4h
+   rcl al, 1      ; c.
+   stc
+   mov al, 0D4h
+   rcr al, 3      ; d.
+[a. 9Ah, b. 6Ah, c. A9h, d. 3Ah]
+
+3. 다음 연산 후 AX와 DX의 내용은 무엇입니까?
+   mov dx, 0
+   mov ax, 222h
+   mov cx, 100h
+   mul cx
+[DX = 0002h, AX = 2200h]
+
+4. 다음 연산 후 AX의 내용은 무엇입니까?
+   mov ax, 63h
+   mov bl, 10h
+   div bl
+[0306h]
+
+5. 다음 연산 후 EAX와 EDX의 내용은 무엇입니까?
+   mov eax, 123400h
+   mov edx, 0
+   mov ebx, 10h
+   div ebx
+[EAX = 00012340h, EDX = 00000000h]
+
+6. 다음 연산 후 AX와 DX의 내용은 무엇입니까?
+   mov ax, 4000h
+   mov dx, 500h
+   mov bx, 10h
+   div bx
+[나눗셈 오버플로우 (Divide Overflow)]
+
+7. 다음 명령어가 실행된 후 BX의 내용은 무엇입니까?
+   mov bx, 5
+   stc
+   mov ax, 60h
+   adc bx, ax
+[66h]
+
+8. 64비트 모드에서 다음 코드가 실행될 때의 출력(레지스터 값)을 설명하세요.
+   .data
+   dividend_hi QWORD 00000108h
+   dividend_lo QWORD 33300020h
+   divisor     QWORD 00000100h
+   .code
+   mov rdx, dividend_hi
+   mov rax, dividend_lo
+   div divisor
+[RAX(몫) = 0000000108333000h, RDX(나머지) = 0000000000000020h]
+
+9. 다음 프로그램은 val1에서 val2를 빼려고 합니다. 모든 논리 오류를 찾아 수정하세요.
+   .data
+   val1   QWORD 20403004362047A1h
+   val2   QWORD 055210304A2630B2h
+   result QWORD 0
+   .code
+     mov cx, 8
+     mov esi, val1    ; 오류 1
+     mov edi, val2    ; 오류 2
+     clc
+   top:
+     mov al, BYTE PTR[esi]
+     sbb al, BYTE PTR[edi]
+     mov BYTE PTR[esi], al
+     dec esi          ; 오류 3
+     dec edi          ; 오류 4
+     loop top
+[수정 사항:
+1. mov esi, OFFSET val1 (값 대신 주소를 넣어야 함)
+2. mov edi, OFFSET val2 (값 대신 주소를 넣어야 함)
+3. inc esi (낮은 바이트부터 계산하므로 주소를 증가시켜야 함)
+4. inc edi (마찬가지로 주소를 증가시켜야 함)]
+
+10. 64비트 모드에서 다음 명령어가 실행된 후 RAX의 16진수 내용은 무엇입니까?
+    .data
+    multiplicand QWORD 0001020304050000h
+    .code
+    imul rax, multiplicand, 4
+[0004080C10140000h]
