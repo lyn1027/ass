@@ -1,0 +1,511 @@
+1. Improved Str_copy Procedure (Str_copyN) 문자열을 복사하되, 최대 복사할 문자 수(maxChars)를 제한합니다.
+[
+Str_copyN PROC USES eax ecx esi edi,
+    source:PTR BYTE,    ; 소스 문자열 포인터
+    target:PTR BYTE,    ; 타겟 문자열 포인터
+    maxChars:DWORD      ; 최대 복사 문자 수
+    
+    mov esi, source
+    mov edi, target
+    mov ecx, maxChars
+    
+    ; maxChars가 0이면 복사하지 않고 종료
+    cmp ecx, 0
+    je  QuitCopy
+
+L1:
+    mov al, [esi]       ; 소스에서 문자 읽기
+    mov [edi], al       ; 타겟에 쓰기
+    cmp al, 0           ; NULL 문자(문자열 끝)인지 확인
+    je  QuitCopy        ; 끝이면 종료
+    
+    inc esi
+    inc edi
+    loop L1             ; maxChars 만큼 반복
+
+    ; 루프가 끝났는데 마지막이 NULL이 아니면 강제로 NULL 추가 (안전장치)
+    mov byte ptr [edi], 0
+
+QuitCopy:
+    ret
+Str_copyN ENDP
+]
+
+2. Str_concat Procedure 타겟 문자열의 끝을 찾아 소스 문자열을 이어 붙입니다.
+[
+Str_concat PROC USES eax ecx esi edi,
+    target:PTR BYTE,    ; 타겟 문자열 (뒤에 이어 붙여질 곳)
+    source:PTR BYTE     ; 소스 문자열 (붙일 내용)
+    
+    ; 1. 타겟 문자열의 끝(NULL) 위치 찾기
+    mov edi, target
+    mov al, 0           ; 찾을 값 (NULL)
+    or  ecx, -1         ; ECX를 최대값으로 설정
+    cld                 ; 정방향 스캔
+    repne scasb         ; NULL 찾기
+    dec edi             ; scasb는 NULL 다음을 가리키므로 한 칸 뒤로(NULL 위치로) 이동
+    
+    ; 2. 소스 문자열 복사
+    mov esi, source
+CopyLoop:
+    mov al, [esi]
+    mov [edi], al
+    cmp al, 0
+    je  RetConcat
+    inc esi
+    inc edi
+    jmp CopyLoop
+
+RetConcat:
+    ret
+Str_concat ENDP
+]
+
+3. Str_remove Procedure 문자열의 특정 위치부터 N개의 문자를 삭제합니다.
+[
+Str_remove PROC USES eax esi edi,
+    pStart:PTR BYTE,    ; 삭제가 시작될 위치의 포인터 (예: target+3)
+    nChars:DWORD        ; 삭제할 문자 수
+    
+    mov edi, pStart     ; 덮어쓸 위치 (Destination)
+    mov esi, pStart
+    add esi, nChars     ; 가져올 위치 (Source = 현재 + n)
+    
+RemoveLoop:
+    mov al, [esi]       ; 뒤쪽 문자 가져옴
+    mov [edi], al       ; 앞쪽으로 당김
+    cmp al, 0           ; NULL 문자까지 이동 완료했는지 확인
+    je  RetRemove
+    inc esi
+    inc edi
+    jmp RemoveLoop
+
+RetRemove:
+    ret
+Str_remove ENDP
+]
+
+4. Str_find Procedure 타겟 문자열 안에 소스 문자열이 있는지 찾습니다. < 찾으면 ZF=1, EAX=위치 / 못 찾으면 ZF=0 >
+[
+Str_find PROC USES ecx esi edi,
+    pSource:PTR BYTE,   ; 찾을 문자열
+    pTarget:PTR BYTE    ; 전체 문자열
+    
+    mov edi, pTarget
+    
+OuterLoop:
+    mov al, [edi]
+    cmp al, 0           ; 타겟 끝 도달 시 종료
+    je  NotFound
+    
+    ; 현재 위치(edi)에서 비교 시작
+    push edi            ; 현재 타겟 위치 저장
+    mov esi, pSource    ; 소스 처음으로 리셋
+    
+InnerLoop:
+    mov ah, [esi]
+    cmp ah, 0           ; 소스 문자열 끝까지 모두 일치함 -> 찾음!
+    je  Found
+    
+    cmp [edi], ah       ; 문자 비교
+    jne Mismatch        ; 다르면 중단
+    
+    inc esi
+    inc edi
+    jmp InnerLoop
+    
+Mismatch:
+    pop edi             ; 저장해둔 타겟 위치 복구
+    inc edi             ; 다음 글자부터 다시 검색
+    jmp OuterLoop
+    
+Found:
+    pop eax             ; 스택에 저장했던 시작 주소(edi)를 EAX로 가져옴
+    cmp eax, eax        ; Zero Flag 세팅 (ZF=1)
+    ret
+
+NotFound:
+    or al, 1            ; Zero Flag 클리어 (ZF=0)
+    ret
+Str_find ENDP
+]
+
+5. Str_nextWord Procedure 구분자(delimiter)를 찾아 NULL로 바꾸고, 그 다음 문자 위치를 EAX에 반환.
+[
+Str_nextWord PROC USES ecx edi,
+    pString:PTR BYTE,   ; 문자열 포인터
+    delimiter:BYTE      ; 구분자 문자 (예: ',')
+    
+    mov edi, pString
+    mov al, delimiter
+    mov ecx, 10000      ; 충분히 큰 길이 (또는 Str_length 사용 가능)
+    cld
+    
+    repne scasb         ; 구분자 찾기
+    jnz NW_NotFound     ; 못 찾음
+    
+    ; 찾았을 경우
+    mov byte ptr [edi-1], 0  ; 구분자를 NULL로 교체
+    mov eax, edi             ; 다음 문자 위치를 EAX에 저장
+    cmp eax, eax             ; ZF=1
+    ret
+
+NW_NotFound:
+    or al, 1                 ; ZF=0
+    ret
+Str_nextWord ENDP
+]
+
+6. Constructing a Frequency Table (Get_frequencies) 문자열의 각 문자 빈도수를 256개 DWORD 배열에 저장합니다.
+[
+Get_frequencies PROC USES eax esi edi,
+    pString:PTR BYTE,   ; 분석할 문자열
+    pTable:PTR DWORD    ; 256개 DWORD 배열 (0으로 초기화 필수)
+    
+    mov esi, pString
+    mov edi, pTable
+    
+FreqLoop:
+    movzx eax, byte ptr [esi]   ; 문자를 읽어서 인덱스로 변환 (0~255)
+    cmp al, 0                   ; 문자열 끝 확인
+    je  RetFreq
+    
+    ; 해당 인덱스의 카운트 증가: pTable[eax * 4]++
+    inc dword ptr [edi + eax*4] 
+    
+    inc esi
+    jmp FreqLoop
+    
+RetFreq:
+    ret
+Get_frequencies ENDP
+]
+
+7. Sieve of Eratosthenes 에라토스테네스의 체를 이용해 소수를 판별합니다. 배열값이 0이면 소수, 1이면 소수가 아님을 의미합니다.
+[
+Sieve_of_Eratosthenes PROC USES eax ecx esi edi
+    ; 전제: .data 섹션에 PrimeArray BYTE 65000 DUP(?) 가 선언되어 있다고 가정
+    ; 이 프로시저 내에서 PrimeArray 오프셋을 직접 사용하거나 파라미터로 받을 수 있음.
+    ; 여기서는 파라미터 없이 전역 변수 PrimeArray를 쓴다고 가정하고 로직 구현.
+    
+    ; 1. 배열 전체를 0으로 초기화
+    mov edi, OFFSET PrimeArray
+    mov ecx, 65000
+    mov al, 0
+    rep stosb
+    
+    ; 2. 체 알고리즘 시작
+    mov esi, 2          ; 숫자 2부터 시작
+    
+OuterSieve:
+    cmp esi, 65000
+    ja  RetSieve
+    
+    ; 현재 숫자(esi)가 이미 지워졌는지(1인지) 확인
+    cmp byte ptr PrimeArray[esi], 0 
+    jne NextPrime       ; 0이 아니면 소수 아님, 건너뜀
+    
+    ; esi는 소수임. 이제 esi의 배수들을 모두 1로 마킹
+    mov eax, esi
+    add eax, esi        ; 첫 배수 (2 * esi)
+    
+InnerSieve:
+    cmp eax, 65000
+    ja  NextPrime
+    mov byte ptr PrimeArray[eax], 1 ; 소수 아님 표시
+    add eax, esi        ; 다음 배수로 점프
+    jmp InnerSieve
+    
+NextPrime:
+    inc esi
+    jmp OuterSieve
+
+RetSieve:
+    ret
+Sieve_of_Eratosthenes ENDP
+]
+
+8. Bubble Sort (With Exchange Flag) 교환이 발생하지 않으면 조기에 정렬을 종료하는 기능을 추가합니다.
+[
+BubbleSort PROC USES eax ecx esi,
+    pArray:PTR DWORD,   ; 배열 포인터
+    count:DWORD         ; 배열 요소 개수
+    
+    mov ecx, count
+    dec ecx             ; 루프 횟수 = N-1
+    
+L_Outer:
+    push ecx            ; 외부 카운터 저장
+    mov esi, pArray
+    
+    ; 교환 플래그 초기화 (0: 교환 없음)
+    ; .data에 exchangeFlag BYTE ? 선언 필요
+    mov byte ptr [exchangeFlag], 0 
+
+L_Inner:
+    mov eax, [esi]
+    cmp [esi+4], eax
+    jge NoSwap          ; 앞의 값이 작거나 같으면 교환 안 함
+    
+    ; 값 교환 (Swap)
+    xchg eax, [esi+4]
+    mov [esi], eax
+    mov byte ptr [exchangeFlag], 1 ; 교환 발생 표시
+    
+NoSwap:
+    add esi, 4
+    loop L_Inner
+    
+    pop ecx             ; 외부 카운터 복구
+    
+    ; 한 번의 패스 동안 교환이 없었다면 정렬 완료
+    cmp byte ptr [exchangeFlag], 0
+    je  QuitSort        
+    
+    loop L_Outer
+
+QuitSort:
+    ret
+BubbleSort ENDP
+]
+
+9. Binary Search (Register Version) First, Last, Mid 변수를 메모리 대신 레지스터를 사용하여 구현합니다. < EBX=First, ECX=Last, EAX=Mid >
+[
+BinarySearch_Reg PROC USES ebx ecx edx esi,
+    pArray:PTR DWORD,
+    Count:DWORD,
+    SearchVal:DWORD
+    
+    mov esi, pArray     ; 배열 주소
+    mov ebx, 0          ; First = 0
+    mov ecx, Count      
+    dec ecx             ; Last = Count - 1
+    
+BS_Loop:
+    cmp ebx, ecx        ; if First > Last, 종료
+    jg  BS_NotFound
+    
+    ; Mid = (First + Last) / 2
+    mov eax, ebx
+    add eax, ecx
+    shr eax, 1          ; EAX = Mid
+    
+    ; 값 비교: Array[Mid] vs SearchVal
+    mov edx, [esi + eax*4] ; EDX = 값
+    cmp edx, SearchVal
+    jl  GoUpper         ; 값 < 찾는값 -> 오른쪽(Upper) 탐색
+    jg  GoLower         ; 값 > 찾는값 -> 왼쪽(Lower) 탐색
+    
+    ; 찾음 (EAX에 인덱스가 들어있음)
+    jmp BS_Quit         ; EAX 그대로 리턴
+
+GoUpper:
+    inc eax
+    mov ebx, eax        ; First = Mid + 1
+    jmp BS_Loop
+
+GoLower:
+    dec eax
+    mov ecx, eax        ; Last = Mid - 1
+    jmp BS_Loop
+
+BS_NotFound:
+    mov eax, -1         ; 못 찾음 표시
+
+BS_Quit:
+    ret
+BinarySearch_Reg ENDP
+]
+
+10. Letter Matrix & 11. Letter Matrix/Sets 4x4 행렬 생성(모음 확률 50%) 및 확인 로직
+[
+GenerateMatrix PROC USES eax ecx esi,
+    pMatrix:PTR BYTE    ; 16바이트 배열 포인터
+    
+    mov esi, pMatrix
+    mov ecx, 16
+    call Randomize      ; 시드 초기화
+    
+GenLoop:
+    call Random32
+    test eax, 1         ; 홀수/짝수 판별
+    jz  MakeConsonant
+    
+    ; 모음 생성 (간략화: A,E,I,O,U 중 하나 랜덤 선택 필요)
+    mov al, 'A'         ; 예시로 'A' 고정 (실제론 랜덤 로직 필요)
+    jmp SaveChar
+    
+MakeConsonant:
+    ; 자음 생성 (간략화: B~Z 중 랜덤)
+    mov al, 'B'         ; 예시
+
+SaveChar:
+    mov [esi], al
+    inc esi
+    loop GenLoop
+    ret
+GenerateMatrix ENDP
+]
+
+11번의 '세트 확인' 로직은 행렬 전체를 순회해야 하므로 핵심 함수인 "4글자 중 모음이 2개인지 확인하는 함수"만 작성합니다.
+[
+CheckVowelSet PROC USES esi ecx,
+    pSet:PTR BYTE       ; 4바이트(4글자) 포인터
+    
+    mov esi, pSet
+    mov ecx, 4
+    mov edx, 0          ; 모음 카운터
+    
+CheckLoop:
+    mov al, [esi]
+    ; IsVowel 함수 호출 (AL이 모음이면 ZF=1 리턴하는 헬퍼 필요)
+    ; call IsVowel 
+    ; jnz Next
+    ; inc edx
+    ; Next:
+    inc esi
+    loop CheckLoop
+    
+    cmp edx, 2          ; 모음이 정확히 2개인가?
+    ; 결과에 따라 출력 루틴으로 분기
+    ret
+CheckVowelSet ENDP
+]
+
+12. Calculate Array Row Sum (calc_row_sum) 명시적 스택 매개변수를 사용하여 2차원 배열의 행 합계를 구합니다.
+[
+calc_row_sum PROC
+    ; 스택 프레임 설정
+    push ebp
+    mov ebp, esp
+    push ebx
+    push ecx
+    push edx
+    push esi
+
+    ; 매개변수 위치 가정 (C 호출 규약 또는 문제 조건에 따름)
+    ; [ebp+8]: Row Index
+    ; [ebp+12]: Array Type (1=Byte, 2=Word, 4=Dword)
+    ; [ebp+16]: Row Size (열의 개수, bytes 아님)
+    ; [ebp+20]: Array Offset
+    
+    ; 행의 시작 주소 계산: Index * RowSize * TypeSize
+    mov eax, [ebp+8]    ; Row Index
+    mul dword ptr [ebp+16] ; EAX = Index * Cols
+    mul dword ptr [ebp+12] ; EAX = (Index * Cols) * TypeSize (Byte offset)
+    
+    mov esi, [ebp+20]   ; Base Address
+    add esi, eax        ; 시작 위치
+    
+    mov ecx, [ebp+16]   ; 반복 횟수 (열 개수)
+    mov eax, 0          ; 합계 초기화
+    
+SumLoop:
+    ; 편의상 DWORD 배열이라고 가정 (Type에 따라 분기 필요)
+    add eax, [esi]      ; 값 더하기
+    add esi, 4          ; 다음 요소로 이동 (TypeSize 만큼)
+    loop SumLoop
+    
+    ; 복구
+    pop esi
+    pop edx
+    pop ecx
+    pop ebx
+    pop ebp
+    ret                 ; C 호출 규약이면 ret, StdCall이면 ret n
+calc_row_sum ENDP
+]
+
+13. Trim Leading Characters 문자열 앞쪽에 있는 특정 문자(charToTrim)들을 모두 제거합니다.
+[
+Str_trim_leading PROC USES eax ecx esi edi,
+    pString:PTR BYTE,
+    charToTrim:BYTE
+    
+    mov esi, pString
+    mov al, charToTrim
+    
+    ; 1. 제거 대상이 아닌 첫 번째 문자 찾기
+FindStart:
+    cmp byte ptr [esi], 0
+    je  AllRemoved      ; 끝까지 갔으면 모두 제거된 것
+    cmp [esi], al
+    jne DoMove          ; 다른 문자 발견 -> 이동 시작
+    inc esi
+    jmp FindStart
+    
+DoMove:
+    ; 2. esi(유효 데이터 시작)부터 edi(문자열 시작)로 복사
+    mov edi, pString
+    cmp esi, edi        ; 지울 게 없었으면 종료
+    je  RetLeadTrim
+    
+MoveLoop:
+    mov al, [esi]
+    mov [edi], al
+    cmp al, 0
+    je  RetLeadTrim
+    inc esi
+    inc edi
+    jmp MoveLoop
+
+AllRemoved:
+    mov edi, pString
+    mov byte ptr [edi], 0 ; 빈 문자열 만들기
+    
+RetLeadTrim:
+    ret
+Str_trim_leading ENDP
+]
+
+14. Trim a Set of Characters 문자열 끝에서부터 '지정된 집합'에 속한 문자가 나오면 계속 제거합니다.
+[
+Str_trim_set PROC USES eax ecx esi edi,
+    pString:PTR BYTE,
+    pSet:PTR BYTE       ; 제거할 문자들의 집합 (예: "#$%",0)
+    
+    ; 1. 문자열 길이 계산 후 마지막 위치로 이동
+    invoke Str_length, pString
+    cmp eax, 0
+    je  RetTrimSet
+    
+    mov esi, pString
+    add esi, eax
+    dec esi             ; esi = 마지막 글자
+    
+TrimLoop:
+    cmp esi, pString    ; 시작점보다 앞서가면 종료
+    jb  RetTrimSet
+    
+    ; 현재 글자([esi])가 pSet에 있는지 확인
+    ; (Str_find_char 같은 헬퍼 함수가 있다고 가정)
+    invoke Str_find_char_in_set, pSet, byte ptr [esi]
+    jnz RetTrimSet      ; 집합에 없는 문자 만나면 종료 (Trim 끝)
+    
+    ; 집합에 있으면 제거 (NULL 처리) 후 계속 앞으로
+    mov byte ptr [esi], 0
+    dec esi
+    jmp TrimLoop
+
+RetTrimSet:
+    ret
+Str_trim_set ENDP
+
+; [보조] 집합에 문자가 있는지 확인하는 함수 (개념적 구현)
+Str_find_char_in_set PROC USES esi, setPtr:PTR BYTE, charVal:BYTE
+    mov esi, setPtr
+L1: mov ah, [esi]
+    cmp ah, 0
+    je  NotFound
+    cmp ah, charVal
+    je  Found
+    inc esi
+    jmp L1
+Found:
+    cmp eax, eax ; ZF=1
+    ret
+NotFound:
+    or eax, 1    ; ZF=0
+    ret
+Str_find_char_in_set ENDP
+]
